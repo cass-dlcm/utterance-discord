@@ -109,7 +109,7 @@ func transcribe(s *discordgo.Session, guildID, channelID string) (err error) {
 	}
 
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(60 * time.Second)
 		close(vc.OpusRecv)
 		vc.Close()
 	}()
