@@ -5,17 +5,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pion/rtp"
+	"github.com/pion/webrtc/v3/pkg/media"
+	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 	"io"
 	"io/ioutil"
-	"time"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"github.com/pion/rtp"
-	"github.com/pion/webrtc/v3/pkg/media"
-	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
+	"time"
 )
 
 func check(e error) {
@@ -133,12 +133,12 @@ func transcribe(s *discordgo.Session, guildID, channelID string) (err error) {
 		if err := stream.Send(&speechpb.StreamingRecognizeRequest{
 			StreamingRequest: &speechpb.StreamingRecognizeRequest_StreamingConfig{
 				StreamingConfig: &speechpb.StreamingRecognitionConfig{
-					Config:			// Workaround while the API doesn't give a more informative error.
-	 					&speechpb.RecognitionConfig{
-							Encoding:        speechpb.RecognitionConfig_OGG_OPUS,
-							SampleRateHertz: 48000,
-							LanguageCode:    "en-US",
-							AudioChannelCount: 2,
+					Config: // Workaround while the API doesn't give a more informative error.
+					&speechpb.RecognitionConfig{
+						Encoding:          speechpb.RecognitionConfig_OGG_OPUS,
+						SampleRateHertz:   48000,
+						LanguageCode:      "en-US",
+						AudioChannelCount: 2,
 					},
 				},
 			},
@@ -147,48 +147,48 @@ func transcribe(s *discordgo.Session, guildID, channelID string) (err error) {
 		}
 		go func() {
 			buf := make([]byte, 1024)
-	    for {
+			for {
 				if i < len(f) {
-		      n, err := f[i].Read(buf)
-		      if n > 0 {
-		        if err := stream.Send(&speechpb.StreamingRecognizeRequest{
-		          StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
-		            AudioContent: buf[:n],
-						  },
-		  			}); err != nil {
-		    			log.Printf("Could not send audio: %v", err)
-		    		}
-		    	}
-		      if err == io.EOF {
-		        // Nothing else to pipe, close the stream.
-		        if err := stream.CloseSend(); err != nil {
-		          log.Fatalf("Could not close stream: %v", err)
-		        }
-		        return
-		      }
-		      if err != nil {
-		        log.Printf("Could not read from file: %v", err)
-		        continue
-		      }
+					n, err := f[i].Read(buf)
+					if n > 0 {
+						if err := stream.Send(&speechpb.StreamingRecognizeRequest{
+							StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
+								AudioContent: buf[:n],
+							},
+						}); err != nil {
+							log.Printf("Could not send audio: %v", err)
+						}
+					}
+					if err == io.EOF {
+						// Nothing else to pipe, close the stream.
+						if err := stream.CloseSend(); err != nil {
+							log.Fatalf("Could not close stream: %v", err)
+						}
+						return
+					}
+					if err != nil {
+						log.Printf("Could not read from file: %v", err)
+						continue
+					}
 				}
-	    }
+			}
 		}()
 
 		for {
-	    resp, err := stream.Recv()
-	    if err == io.EOF {
-	      break
-	    }
-	    if err != nil {
-	      log.Fatalf("Cannot stream results: %v", err)
-	    }
-	    if err := resp.Error; err != nil {
-	      log.Fatalf("Could not recognize: %v", err)
-	    }
-	    for _, result := range resp.Results {
-	      fmt.Printf("Result: %+v\n", result)
-	    }
-	  }
+			resp, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatalf("Cannot stream results: %v", err)
+			}
+			if err := resp.Error; err != nil {
+				log.Fatalf("Could not recognize: %v", err)
+			}
+			for _, result := range resp.Results {
+				fmt.Printf("Result: %+v\n", result)
+			}
+		}
 	}
 
 	// Disconnect from the provided voice channel.
@@ -196,7 +196,6 @@ func transcribe(s *discordgo.Session, guildID, channelID string) (err error) {
 
 	return nil
 }
-
 
 func createPionRTPPacket(p *discordgo.Packet) *rtp.Packet {
 	return &rtp.Packet{
@@ -244,10 +243,10 @@ func handleVoice(c chan *discordgo.Packet) []string {
 }
 
 func AppendIfMissing(slice []string, s string) []string {
-    for _, ele := range slice {
-        if ele == s {
-            return slice
-        }
-    }
-    return append(slice, s)
+	for _, ele := range slice {
+		if ele == s {
+			return slice
+		}
+	}
+	return append(slice, s)
 }
