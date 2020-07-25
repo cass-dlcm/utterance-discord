@@ -9,7 +9,7 @@ In it's current state, the bot can:
 * join voice channels
 * listen on voice channels for a minute
 * send to cloud speech-to-text endpoint
+* send the transcript to the channel it was invoked in
 
 Things not yet implemented:
 * Listening for longer than a minute
-* Sending transcript in text channels
