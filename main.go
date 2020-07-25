@@ -28,7 +28,7 @@ func main() {
 	dat, err := ioutil.ReadFile("token")
 	check(err)
 
-	dg, err := discordgo.New(string(dat))
+	dg, err := discordgo.New("Bot " + string(dat))
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
 		return
@@ -85,7 +85,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Look for the message sender in that guild's current voice states.
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				transcribe(s, g.ID, vs.ChannelID)
+				transcribe(s, g.ID, vs.ChannelID, m.ChannelID)
 				return
 			}
 		}
@@ -93,10 +93,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 }
 
-func transcribe(s *discordgo.Session, guildID, channelID string) (err error) {
+func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChannelID string) (err error) {
 
 	// Join the provided voice channel.
-	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, false)
+	vc, err := s.ChannelVoiceJoin(guildID, voiceChannelID, false, false)
 	if err != nil {
 		return err
 	}
@@ -186,6 +186,10 @@ func transcribe(s *discordgo.Session, guildID, channelID string) (err error) {
 	      log.Fatalf("Could not recognize: %v", err)
 	    }
 	    for _, result := range resp.Results {
+				_, err := s.ChannelMessageSend(textChannelID, fmt.Sprintf("%+v\n", result.Alternatives[0].Transcript))
+				if err != nil {
+					log.Printf("Error: %v", err)
+				}
 	      fmt.Printf("Result: %+v\n", result)
 	    }
 	  }
