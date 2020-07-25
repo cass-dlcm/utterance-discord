@@ -7,8 +7,9 @@ Utterance-Discord is a proof-of-concept Discord bot designed to transcribe voice
 In it's current state, the bot can:
 * respond to commands
 * join voice channels
-* listen on voice channels
+* listen on voice channels for a minute
+* send to cloud speech-to-text endpoint
 
 Things not yet implemented:
-* Sending to cloud speech-to-text endpoint
+* Listening for longer than a minute
 * Sending transcript in text channels

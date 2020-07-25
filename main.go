@@ -5,17 +5,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/pion/rtp"
+	"github.com/pion/webrtc/v3/pkg/media"
+	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
 	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1"
 	"io"
 	"io/ioutil"
-	"time"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"github.com/pion/rtp"
-	"github.com/pion/webrtc/v3/pkg/media"
-	"github.com/pion/webrtc/v3/pkg/media/oggwriter"
+	"time"
 )
 
 func check(e error) {
@@ -133,12 +133,12 @@ func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChanne
 		if err := stream.Send(&speechpb.StreamingRecognizeRequest{
 			StreamingRequest: &speechpb.StreamingRecognizeRequest_StreamingConfig{
 				StreamingConfig: &speechpb.StreamingRecognitionConfig{
-					Config:			// Workaround while the API doesn't give a more informative error.
-	 					&speechpb.RecognitionConfig{
-							Encoding:        speechpb.RecognitionConfig_OGG_OPUS,
-							SampleRateHertz: 48000,
-							LanguageCode:    "en-US",
-							AudioChannelCount: 2,
+					Config: // Workaround while the API doesn't give a more informative error.
+					&speechpb.RecognitionConfig{
+						Encoding:          speechpb.RecognitionConfig_OGG_OPUS,
+						SampleRateHertz:   48000,
+						LanguageCode:      "en-US",
+						AudioChannelCount: 2,
 					},
 				},
 			},
@@ -147,31 +147,31 @@ func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChanne
 		}
 		go func() {
 			buf := make([]byte, 1024)
-	    for {
+			for {
 				if i < len(f) {
-		      n, err := f[i].Read(buf)
-		      if n > 0 {
-		        if err := stream.Send(&speechpb.StreamingRecognizeRequest{
-		          StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
-		            AudioContent: buf[:n],
-						  },
-		  			}); err != nil {
-		    			log.Printf("Could not send audio: %v", err)
-		    		}
-		    	}
-		      if err == io.EOF {
-		        // Nothing else to pipe, close the stream.
-		        if err := stream.CloseSend(); err != nil {
-		          log.Fatalf("Could not close stream: %v", err)
-		        }
-		        return
-		      }
-		      if err != nil {
-		        log.Printf("Could not read from file: %v", err)
-		        continue
-		      }
+					n, err := f[i].Read(buf)
+					if n > 0 {
+						if err := stream.Send(&speechpb.StreamingRecognizeRequest{
+							StreamingRequest: &speechpb.StreamingRecognizeRequest_AudioContent{
+								AudioContent: buf[:n],
+							},
+						}); err != nil {
+							log.Printf("Could not send audio: %v", err)
+						}
+					}
+					if err == io.EOF {
+						// Nothing else to pipe, close the stream.
+						if err := stream.CloseSend(); err != nil {
+							log.Fatalf("Could not close stream: %v", err)
+						}
+						return
+					}
+					if err != nil {
+						log.Printf("Could not read from file: %v", err)
+						continue
+					}
 				}
-	    }
+			}
 		}()
 
 		for {
@@ -200,7 +200,6 @@ func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChanne
 
 	return nil
 }
-
 
 func createPionRTPPacket(p *discordgo.Packet) *rtp.Packet {
 	return &rtp.Packet{
@@ -248,10 +247,10 @@ func handleVoice(c chan *discordgo.Packet) []string {
 }
 
 func AppendIfMissing(slice []string, s string) []string {
-    for _, ele := range slice {
-        if ele == s {
-            return slice
-        }
-    }
-    return append(slice, s)
+	for _, ele := range slice {
+		if ele == s {
+			return slice
+		}
+	}
+	return append(slice, s)
 }
