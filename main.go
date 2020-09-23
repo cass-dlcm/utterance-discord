@@ -85,7 +85,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Look for the message sender in that guild's current voice states.
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				transcribe(s, g.ID, vs.ChannelID, m.ChannelID)
+				transcribe(s, g.ID, vs.ChannelID, m.ChannelID, m.Author.ID)
 				return
 			}
 		}
@@ -93,7 +93,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 }
 
-func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChannelID string) (err error) {
+func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChannelID string, authorID string) (err error) {
 
 	// Join the provided voice channel.
 	vc, err := s.ChannelVoiceJoin(guildID, voiceChannelID, false, false)
@@ -108,15 +108,30 @@ func transcribe(s *discordgo.Session, guildID, voiceChannelID string, textChanne
 		log.Fatal(err)
 	}
 
+
 	go func() {
-		time.Sleep(60 * time.Second)
+		found := true
+		for found {
+			found = false
+			// Find the guild for that channel.
+			g, err := s.State.Guild(guildID)
+			if err != nil {
+				// Could not find guild.
+				return
+			}
+			// Look for the message sender in that guild's current voice states.
+			for _, vs := range g.VoiceStates {
+				if vs.UserID == authorID {
+					found = true
+					time.Sleep(5 * time.Second)
+				}
+			}
+		}
 		close(vc.OpusRecv)
 		vc.Close()
 	}()
 
 	audioFiles := handleVoice(vc.OpusRecv)
-
-	print(len(audioFiles))
 
 	f := []*os.File{}
 	for i, file := range audioFiles {
